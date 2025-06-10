@@ -1,0 +1,13 @@
+name: TrabajoTareaConjunta
+title: TrabajoTareaConjunta
+username: monksam07
+account: monksam07
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 14913064
+bundleId: 10431175
+url: https://monksam07.shinyapps.io/TrabajoTareaConjunta/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: comparacion_frecuentista_bayesiano_winbugs.csv|Informe.pdf|Informe.Rmd|modelo_glm_jerarquico.txt|README.md
