@@ -1,7 +1,7 @@
 # Análisis Integral de Procedimientos Hospitalarios: Una Aproximación Multimetodológica
 
 **Autores:** Saray Calvo Parra, Vaska Tomova Manolova y Santiago Agustín Moncalero  
-**Institución:** Máster en Bioestadística - Universidad de Valencia  
+Tarea conjunto del Modulo IV - Máster en Bioestadística - Universidad de Valencia  
 **Fecha:** Junio 2025
 
 ## 📋 Descripción del Proyecto
@@ -47,9 +47,10 @@ Este repositorio contiene un análisis estadístico integral de los factores que
 
 ```
 ├── app.R                              # Aplicación Shiny interactiva
-├── Prueba (2).Rmd                     # Código R Markdown del análisis
+├── Informe.Rmd                        # Código R Markdown del análisis
 ├── procedimientos_hospitales.csv      # Base de datos utilizada
 ├── informe_final.pdf                  # Informe completo en PDF
+├── Podcast Analisis.mp4               # podcast de 7 minutos generados con IA, analizando los resultados
 └── README.md                          # Este archivo
 ```
 
