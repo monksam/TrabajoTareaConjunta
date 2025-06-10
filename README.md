@@ -1,7 +1,7 @@
 # Análisis Integral de Procedimientos Hospitalarios: Una Aproximación Multimetodológica
 
 **Autores:** Saray Calvo Parra, Vaska Tomova Manolova y Santiago Agustín Moncalero  
-**Institución:** Máster en Bioestadística - Universidad de Valencia  
+Tarea conjunto del Modulo IV -Máster en Bioestadística - Universidad de Valencia  
 **Fecha:** Junio 2025
 
 ## 📋 Descripción del Proyecto
