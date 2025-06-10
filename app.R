@@ -15,7 +15,8 @@ ui <- dashboardPage(
     sidebarMenu(
       menuItem("Explicación del Estudio", tabName = "explicacion", icon = icon("info-circle")),
       menuItem("Análisis Gráfico", tabName = "graficos", icon = icon("chart-bar")),
-      menuItem("Predicción", tabName = "prediccion", icon = icon("calculator"))
+      menuItem("Predicción", tabName = "prediccion", icon = icon("calculator")),
+      menuItem("Enlaces y Recursos", tabName = "recursos", icon = icon("qrcode"))
     )
   ),
   
@@ -86,7 +87,7 @@ ui <- dashboardPage(
               
               fluidRow(
                 box(
-                  title = "Relación entre Variables Continuas", 
+                  title = "Relación entre Variables Continuas (Escala Log)", 
                   status = "info", 
                   solidHeader = TRUE,
                   width = 6,
@@ -175,6 +176,56 @@ ui <- dashboardPage(
                   tableOutput("analisis_sensibilidad")
                 )
               )
+      ),
+      
+      # Nueva pestaña de Recursos
+      tabItem(tabName = "recursos",
+              fluidRow(
+                box(
+                  title = "Enlaces y Recursos", 
+                  status = "primary", 
+                  solidHeader = TRUE,
+                  width = 12,
+                  h3("Acceso a Recursos Adicionales"),
+                  p("Escanea los códigos QR para acceder a los recursos relacionados con este proyecto:")
+                )
+              ),
+              
+              fluidRow(
+                box(
+                  title = "Página Web del Proyecto", 
+                  status = "info", 
+                  solidHeader = TRUE,
+                  width = 6,
+                  div(style = "text-align: center;",
+                      h4("Aplicación Web"),
+                      br(),
+                      img(src = "QRpaginaweb.jpg", 
+                          alt = "QR Página Web", 
+                          style = "max-width: 300px; max-height: 300px; width: auto; height: auto;"),
+                      br(),
+                      br(),
+                      p("Escanea este código QR para acceder a la aplicación web en línea.")
+                  )
+                ),
+                
+                box(
+                  title = "Repositorio GitHub", 
+                  status = "success", 
+                  solidHeader = TRUE,
+                  width = 6,
+                  div(style = "text-align: center;",
+                      h4("Código Fuente"),
+                      br(),
+                      img(src = "QRgithub.jpg", 
+                          alt = "QR GitHub", 
+                          style = "max-width: 300px; max-height: 300px; width: auto; height: auto;"),
+                      br(),
+                      br(),
+                      p("Escanea este código QR para acceder al repositorio de GitHub con el código fuente completo.")
+                  )
+                )
+              )
       )
     )
   )
@@ -258,17 +309,20 @@ server <- function(input, output, session) {
     stats
   })
   
-  # Gráfico de dispersión
+  # Gráfico de dispersión con escala log
   output$scatter_plot <- renderPlotly({
     req(datos())
     
     p <- ggplot(datos(), aes_string(x = input$variable_x, y = "num_procedimientos")) +
       geom_point(alpha = 0.6, color = "steelblue") +
-      geom_smooth(method = "lm", color = "red", se = TRUE) +
-      labs(title = paste("Relación entre", input$variable_x, "y número de procedimientos"),
+      geom_smooth(method = "glm", method.args = list(family = "poisson"), 
+                  color = "red", se = TRUE) +
+      scale_y_log10() +
+      labs(title = paste("Relación entre", input$variable_x, "y log(número de procedimientos)"),
            x = input$variable_x,
-           y = "Número de procedimientos") +
-      theme_minimal()
+           y = "Número de procedimientos (escala log)") +
+      theme_minimal() +
+      annotation_logticks(sides = "l")
     
     ggplotly(p)
   })
