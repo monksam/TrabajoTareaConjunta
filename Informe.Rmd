@@ -21,8 +21,9 @@ knitr::opts_chunk$set(
   message = FALSE,
   warning = FALSE,
   fig.align = "center",
-  fig.width = 8,
-  fig.height = 7
+  fig.width = 6,
+  fig.height = 4,
+  out.width = '80%'
 )
 
 # Cargar las librerías necesarias
@@ -38,7 +39,8 @@ library(performance)
 
 # Introducción
 
-El objetivo principal es identificar y cuantificar los factores que influyen en el número de procedimientos realizados, considerando tanto efectos fijos como la estructura jerárquica inherente a los datos hospitalarios. Este análisis permitirá informar decisiones sobre gestión de recursos, políticas de contratación y optimización de la productividad médica.
+El objetivo principal es identificar y cuantificar los factores que influyen en el número de procedimientos hospitalarios realizados, considerando tanto efectos fijos como la estructura jerárquica inherente a los datos hospitalarios. Este análisis permitirá informar decisiones sobre gestión de recursos, políticas de contratación y optimización de la productividad médica. 
+
 
 # Análisis Exploratorio de Datos
 
@@ -114,6 +116,7 @@ Dada la complejidad de los datos (sobredispersión, estructura jerárquica, posi
 
 ### Fase I: Modelos Lineales Generalizados (GLM)
 **Objetivo**: Establecer líneas base y manejar la naturaleza de conteo con sobredispersión
+
 - Modelo Poisson básico: Referencia para datos de conteo
 - Modelo Binomial Negativo: Incorporación explícita de sobredispersión
 
@@ -257,16 +260,13 @@ El proceso de modelización revela **insights metodológicos fundamentales**:
 
 3.  **Parsimonia y robustez**: El modelo GLM jerárquico Poisson alcanza el mismo desempeño predictivo que modelos más complejos, demostrando que **la simplicidad es preferible** cuando el rendimiento es equivalente.
 
-.  **Efectos aleatorios como factor clave**: Los efectos aleatorios departamentales capturan la heterogeneidad organizacional de manera más efectiva que los enfoques de modelado no lineal o distribuciones alternativas.
+4.  **Efectos aleatorios como factor clave**: Los efectos aleatorios departamentales capturan la heterogeneidad organizacional de manera más efectiva que los enfoques de modelado no lineal o distribuciones alternativas.
 
 # Modelo Final Seleccionado
 
 ## Especificación del modelo óptimo
 
-El **modelo final** es un GAM jerárquico con distribución Binomial Negativa que integra:
-- **No linealidades** mediante splines en variables continuas
-- **Efectos aleatorios** departamentales para capturar heterogeneidad
-- **Manejo explícito de sobredispersión** mediante distribución Binomial Negativa
+El **modelo final** es un GLMM Poisson que integra los **efectos aleatorios** departamentales para capturar heterogeneidad.
 
 ```{r modelo-final-resumen}
 # Resumen del modelo final
@@ -343,8 +343,7 @@ ggplot(data.frame(observados = datos_test$num_procedimientos, predichos = predic
   geom_point(alpha = 0.7) +
   geom_abline(intercept = 0, slope = 1, color = "red", linetype = "dashed") +
   labs(title = "Validación predictiva del modelo GLM jerárquico final",
-       x = "Valores observados", y = "Valores predichos",
-       subtitle = paste("RMSE =", round(RMSE, 2), "| MAE =", round(MAE, 2), "| R² =", round(R2_ajustado, 3))) +
+       x = "Valores observados", y = "Valores predichos")+
   theme_minimal()
 ```
 
@@ -372,7 +371,7 @@ Como **Fase III** de nuestra estrategia de modelización progresiva, implementam
 
 Los **diagnósticos MCMC confirman convergencia robusta**:
 
-- **Estadístico R̂**: Todos los parámetros < 1.02 (criterio < 1.1) ✓
+- **Estadístico $\hat{R}$**: Todos los parámetros < 1.02 (criterio < 1.1) ✓
 - **Tamaño efectivo de muestra**: n_eff > 140 en todos los casos ✓
 - **Diferencia relativa promedio**: 0.33% entre paradigmas metodológicos
 
@@ -382,9 +381,9 @@ Los **diagnósticos MCMC confirman convergencia robusta**:
 load("resultados_winbugs_glm_jerarquico.RData")
 
 # Mostrar métricas de validación
-knitr::kable(validacion[, c("Parametro", "Diferencia_Relativa_Pct", "Rhat")],
+knitr::kable(validacion[, c("Parametro", "n_eff", "Rhat")],
              caption = "Métricas de convergencia y validación cruzada",
-             col.names = c("Parámetro", "Diferencia (%)", "R̂"))
+             col.names = c("Parámetro", "n.eff", "̂R-hat"))
 ```
 
 La **concordancia excepcional entre estimaciones frecuentistas y Bayesianas** (diferencias < 1%) constituye una validación metodológica fundamental: **dos paradigmas estadísticos independientes convergen a conclusiones idénticas** sobre los determinantes de la productividad hospitalaria, confirmando la robustez de nuestros hallazgos sustantivos.
@@ -407,3 +406,308 @@ Este análisis integral demuestra que la **productividad en procedimientos hospi
 Los **hallazgos metodológicos clave** revelan que: (1) la **estructura jerárquica** es el factor dominante en la variabilidad de datos hospitalarios, (2) las **relaciones son predominantemente lineales** tras controlar efectos aleatorios, y (3) la **validación cruzada Bayesiana** confirma la robustez de las estimaciones.
 
 Las **implicaciones estratégicas** incluyen políticas de estabilización contractual (diferencial -39.3% residentes), gestión proactiva del bienestar laboral, e inversión en formación especializada, todas ellas implementables mediante el modelo GLM jerárquico Poisson desarrollado, que combina **simplicidad operativa, interpretabilidad directa y robustez predictiva** (R² = 0.76) para la toma de decisiones en gestión hospitalaria.
+
+
+# Anexo
+
+```{r eval=FALSE, echo=TRUE}
+# ====================================================================
+# CÓDIGO R COMPLETO - ANÁLISIS INTEGRAL DE PROCEDIMIENTOS HOSPITALARIOS
+# Autores: Saray Calvo Parra, Vaska Tomova Manolova y Santiago Agustin Moncalero
+# ====================================================================
+
+# Configuración inicial
+knitr::opts_chunk$set(
+  echo = FALSE,
+  message = FALSE,
+  warning = FALSE,
+  fig.align = "center",
+  fig.width = 8,
+  fig.height = 7
+)
+
+# Cargar las librerías necesarias
+library(ggplot2)
+library(dplyr)
+library(MASS)
+library(lme4)
+library(mgcv)
+library(glmmTMB)
+library(kableExtra)
+library(performance)
+
+# ====================================================================
+# 1. CARGA Y PREPARACIÓN DE DATOS
+# ====================================================================
+
+# Cargar datos
+datos <- read.csv("procedimientos_hospitales.csv")
+
+# Convertir variables categóricas a factores
+datos$departamento <- as.factor(datos$departamento)
+datos$tipo_contrato <- as.factor(datos$tipo_contrato)
+
+# ====================================================================
+# 2. ANÁLISIS EXPLORATORIO DE DATOS
+# ====================================================================
+
+# Estadísticas descriptivas de la variable respuesta
+media_proc <- mean(datos$num_procedimientos)
+mediana_proc <- median(datos$num_procedimientos)
+var_proc <- var(datos$num_procedimientos)
+ratio_var_media <- var_proc/media_proc
+
+# Histograma de la variable respuesta
+ggplot(datos, aes(x = num_procedimientos)) +
+  geom_histogram(bins = 30, fill = "lightblue", color = "darkblue", alpha = 0.7) +
+  labs(title = "Distribución del número de procedimientos",
+       x = "Número de procedimientos", 
+       y = "Frecuencia") +
+  theme_minimal() +
+  annotate("text", x = max(datos$num_procedimientos) * 0.7, 
+           y = max(table(datos$num_procedimientos)) * 0.8,
+           label = paste("Media:", round(media_proc, 2), 
+                         "\nMediana:", mediana_proc,
+                         "\nVarianza:", round(var_proc, 2),
+                         "\nRatio var/media:", round(ratio_var_media, 2)),
+           hjust = 0)
+
+# ====================================================================
+# 3. MODELIZACIÓN PROGRESIVA
+# ====================================================================
+
+# Modelo 1: Poisson básico
+modelo_poisson <- glm(num_procedimientos ~ experiencia_anios + horas_trabajadas + 
+                     nivel_estres + tipo_contrato + formacion_adicional,
+                   family = poisson(link = "log"), 
+                   data = datos)
+
+# Modelo 2: Binomial Negativo
+modelo_nb <- glm.nb(num_procedimientos ~ experiencia_anios + horas_trabajadas + 
+                     nivel_estres + tipo_contrato + formacion_adicional,
+                   data = datos)
+
+# Modelo 3: Jerárquico con Poisson
+modelo_jerarquico_poisson <- glmer(
+  num_procedimientos ~ experiencia_anios + horas_trabajadas +
+  nivel_estres + tipo_contrato + formacion_adicional + (1 | departamento),
+  family = poisson(link = "log"),
+  data = datos)
+
+# Modelo 4: Jerárquico con Binomial Negativa
+modelo_jerarquico_nb <- glmmTMB(num_procedimientos ~ experiencia_anios + horas_trabajadas + 
+                               nivel_estres + tipo_contrato + formacion_adicional + (1|departamento),
+                             family = nbinom2(link = "log"), 
+                             data = datos)
+
+# Modelo 5: GAM con Poisson
+modelo_gam_pois <- gam(num_procedimientos ~ s(experiencia_anios) + s(horas_trabajadas) + 
+                     s(nivel_estres) + tipo_contrato + s(formacion_adicional),
+                   family = poisson(link = "log"), 
+                   data = datos)
+
+# Modelo 6: GAM con Binomial Negativa
+modelo_gam_nb <- gam(num_procedimientos ~ s(experiencia_anios) + s(horas_trabajadas) + 
+                     s(nivel_estres) + tipo_contrato + s(formacion_adicional),
+                   family = nb(), 
+                   data = datos)
+
+# Modelo 7: GAM jerárquico con Poisson
+modelo_gam_mixto_pois <- gam(num_procedimientos ~ s(experiencia_anios) + s(horas_trabajadas) + 
+                          s(nivel_estres) + tipo_contrato + s(formacion_adicional) + s(departamento, bs="re"),
+                        family = poisson(link="log"), 
+                        data = datos)
+
+# Modelo Final: Jerárquico con Poisson
+modelo_final <- glmer(
+  num_procedimientos ~ experiencia_anios + horas_trabajadas +
+  nivel_estres + tipo_contrato + formacion_adicional + (1 | departamento),
+  family = poisson(link = "log"),
+  data = datos)
+
+# ====================================================================
+# 4. COMPARACIÓN DE MODELOS
+# ====================================================================
+
+# Calcular predicciones para cada modelo
+pred_poisson <- predict(modelo_poisson, type = "response")
+pred_nb <- predict(modelo_nb, type = "response")
+pred_jer_pois <- predict(modelo_jerarquico_poisson, type = "response")
+pred_jer_nb <- predict(modelo_jerarquico_nb, type = "response")
+pred_gam_pois <- predict(modelo_gam_pois, type = "response")
+pred_gam_nb <- predict(modelo_gam_nb, type = "response")
+pred_gam_jer_pois <- predict(modelo_gam_mixto_pois, type = "response")
+pred_final <- predict(modelo_jerarquico_poisson, type = "response")
+
+# Función para calcular métricas
+calcular_metricas <- function(observado, predicho) {
+  rmse <- sqrt(mean((observado - predicho)^2))
+  mae <- mean(abs(observado - predicho))
+  return(c(rmse, mae))
+}
+
+y_obs <- datos$num_procedimientos
+
+# Calcular métricas para todos los modelos
+metricas_poisson <- calcular_metricas(y_obs, pred_poisson)
+metricas_nb <- calcular_metricas(y_obs, pred_nb)
+metricas_jer_pois <- calcular_metricas(y_obs, pred_jer_pois)
+metricas_jer_nb <- calcular_metricas(y_obs, pred_jer_nb)
+metricas_gam_pois <- calcular_metricas(y_obs, pred_gam_pois)
+metricas_gam_nb <- calcular_metricas(y_obs, pred_gam_nb)
+metricas_gam_jer_pois <- calcular_metricas(y_obs, pred_gam_jer_pois)
+metricas_final <- calcular_metricas(y_obs, pred_final)
+
+# Crear tabla comparativa
+comparativa <- data.frame(
+  Modelo = c("Poisson básico", "Binomial Negativo", "Jerárquico Poisson",
+             "Jerárquico BN", "GAM Poisson", "GAM Binomial Negativo",
+             "GAM jerárquico Poisson", "Modelo Final"),
+  RMSE = round(c(metricas_poisson[1], metricas_nb[1], metricas_jer_pois[1],
+                 metricas_jer_nb[1], metricas_gam_pois[1], metricas_gam_nb[1],
+                 metricas_gam_jer_pois[1], metricas_final[1]), 2),
+  MAE = round(c(metricas_poisson[2], metricas_nb[2], metricas_jer_pois[2],
+                metricas_jer_nb[2], metricas_gam_pois[2], metricas_gam_nb[2],
+                metricas_gam_jer_pois[2], metricas_final[2]), 2),
+  Caracteristicas = c(
+    "Lineal, sin sobredispersión, sin efectos aleatorios",
+    "Lineal, con sobredispersión, sin efectos aleatorios",
+    "Lineal, sin sobredispersión, con efectos aleatorios",
+    "Lineal, con sobredispersión, con efectos aleatorios",
+    "No lineal, sin sobredispersión, sin efectos aleatorios",
+    "No lineal, con sobredispersión, sin efectos aleatorios",
+    "No lineal, sin sobredispersión, con efectos aleatorios",
+    "Modelo Final Seleccionado"
+  )
+)
+
+# Mostrar tabla comparativa
+knitr::kable(comparativa, caption = "Comparativa de modelos basada en ajuste a los datos")
+
+# ====================================================================
+# 5. ANÁLISIS DEL MODELO FINAL
+# ====================================================================
+
+# Resumen del modelo final
+summary_final <- summary(modelo_final)
+
+# Extraer coeficientes de efectos paramétricos
+coef_final <- as.data.frame(summary_final$coefficients)
+coef_final$Efecto_Porcentual <- paste(ifelse(coef_final$Estimate > 0, "+", ""), 
+                                     round((exp(coef_final$Estimate) - 1) * 100, 1), "%", sep = "")
+
+coef_final <- coef_final[, c("Estimate", "Std. Error", "z value", "Pr(>|z|)", "Efecto_Porcentual")]
+colnames(coef_final) <- c("Coeficiente", "Error Estándar", "Valor z", "p-valor", "Efecto Porcentual")
+
+# Mostrar tabla de coeficientes
+knitr::kable(coef_final, caption = "Efectos paramétricos del modelo final GLM jerárquico", digits = 3)
+
+# ====================================================================
+# 6. VALIDACIÓN PREDICTIVA
+# ====================================================================
+
+# Validación cruzada simple
+set.seed(123)
+indices_train <- sample(1:nrow(datos), 0.8 * nrow(datos))
+datos_train <- datos[indices_train, ]
+datos_test <- datos[-indices_train, ]
+
+# Ajustar modelo en datos de entrenamiento
+modelo_train <- glmer(num_procedimientos ~ experiencia_anios + horas_trabajadas +
+                     nivel_estres + tipo_contrato + formacion_adicional + (1 | departamento),
+                     family = poisson(link = "log"), 
+                     data = datos_train)
+
+# Predecir en datos de prueba
+predicciones <- predict(modelo_train, newdata = datos_test, type = "response")
+
+# Calcular métricas de validación
+error <- datos_test$num_procedimientos - predicciones
+RMSE <- sqrt(mean(error^2))
+MAE <- mean(abs(error))
+R2_ajustado <- 1 - var(error)/var(datos_test$num_procedimientos)
+
+# Gráfico de validación predictiva
+ggplot(data.frame(observados = datos_test$num_procedimientos, predichos = predicciones), 
+       aes(x = observados, y = predichos)) +
+  geom_point(alpha = 0.7) +
+  geom_abline(intercept = 0, slope = 1, color = "red", linetype = "dashed") +
+  labs(title = "Validación predictiva del modelo GLM jerárquico final",
+       x = "Valores observados", y = "Valores predichos") +
+  theme_minimal()
+
+# Mostrar métricas de validación
+cat("Métricas de Validación Cruzada:\n")
+cat("RMSE:", round(RMSE, 2), "\n")
+cat("MAE:", round(MAE, 2), "\n")
+cat("R² ajustado:", round(R2_ajustado, 3), "\n")
+
+# ====================================================================
+# 7. VALIDACIÓN BAYESIANA (CÓDIGO WINBUGS)
+# ====================================================================
+
+# Código BUGS para validación bayesiana
+cat("
+# Código WinBUGS para validación bayesiana:
+model {
+  # Likelihood
+  for (i in 1:N) {
+    Y[i] ~ dpois(lambda[i])
+    log(lambda[i]) <- beta0 + 
+                      beta1 * experiencia[i] + 
+                      beta2 * horas[i] + 
+                      beta3 * estres[i] + 
+                      beta4 * residencia[i] + 
+                      beta5 * temporal[i] + 
+                      beta6 * formacion[i] + 
+                      u[departamento[i]]
+  }
+  
+  # Efectos aleatorios por departamento
+  for (j in 1:N_dept) {
+    u[j] ~ dnorm(0, tau.u)
+  }
+  
+  # Priors para efectos fijos
+  beta0 ~ dnorm(0, 0.01)     # Intercepto
+  beta1 ~ dnorm(0, 0.01)     # Experiencia
+  beta2 ~ dnorm(0, 0.01)     # Horas trabajadas
+  beta3 ~ dnorm(0, 0.01)     # Nivel de estrés
+  beta4 ~ dnorm(0, 0.01)     # Contrato residencia
+  beta5 ~ dnorm(0, 0.01)     # Contrato temporal
+  beta6 ~ dnorm(0, 0.01)     # Formación adicional
+  
+  # Prior para la precisión de efectos aleatorios
+  tau.u ~ dgamma(0.01, 0.01)
+  sigma.u <- sqrt(1/tau.u)
+}
+")
+
+# Cargar resultados pre-computados de validación bayesiana (si están disponibles)
+# load("resultados_winbugs_glm_jerarquico.RData")
+
+# ====================================================================
+# 8. DIAGNÓSTICOS DEL MODELO
+# ====================================================================
+
+# Diagnósticos de residuos
+residuos <- residuals(modelo_final, type = "pearson")
+
+# Gráfico Q-Q de residuos
+qqnorm(residuos, main = "Q-Q Plot de Residuos de Pearson")
+qqline(residuos)
+
+# Gráfico de residuos vs valores ajustados
+plot(fitted(modelo_final), residuos, 
+     xlab = "Valores Ajustados", ylab = "Residuos de Pearson",
+     main = "Residuos vs Valores Ajustados")
+abline(h = 0, col = "red", lty = 2)
+
+# Test de sobredispersión
+dispersion_ratio <- sum(residuos^2) / (nrow(datos) - length(fixef(modelo_final)))
+cat("Ratio de dispersión:", round(dispersion_ratio, 3), "\n")
+
+# ====================================================================
+# FIN DEL CÓDIGO
+# ====================================================================
+```
